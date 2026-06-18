@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexPay HQ - Core Matrix Administrative Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0b1329; color: #f4f5f6; }
+        .bg-brand-red { background-color: #E61E2A; }
+        .bg-brand-blue { background-color: #0046AD; }
+        .sidebar-item-active { background: linear-gradient(90deg, rgba(0,70,173,0.3) 0%, rgba(0,0,0,0) 100%); border-left: 4px solid #E61E2A; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); backdrop-filter: blur(10px); }
+        /* Table Custom Scrollbar tuning adjustments */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #0046AD; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-72 bg-[#060b19] border-r border-slate-800 flex flex-col justify-between">
+        <div>
+            <div class="p-6 border-b border-slate-800 text-center">
+                <h1 class="text-2xl font-black tracking-widest text-white">Nex<span class="text-brand-red">Pay</span> <span class="text-xs bg-brand-blue px-2 py-0.5 rounded text-gray-200">HQ</span></h1>
+                <p class="text-[10px] text-slate-500 font-mono mt-1">OPERATIONS CONTROL CENTER v2.6</p>
+            </div>
+            
+            <nav class="mt-6 px-4 space-y-1">
+                <button onclick="switchAdminPanelSection('secOverview', this)" class="sidebar-item-active w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white text-left transition-all">
+                    <i class="fa-solid fa-chart-pie text-brand-blue w-5"></i> Dashboard Analytics
+                </button>
+                <button onclick="switchAdminPanelSection('secKycCenter', this)" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white text-left transition-all">
+                    <i class="fa-solid fa-user-shield text-brand-red w-5"></i> KYC Verification Hub
+                    <span id="badgeKycCount" class="ml-auto bg-brand-red text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden animate-pulse">0</span>
+                </button>
+                <button onclick="switchAdminPanelSection('secUserMatrix', this)" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white text-left transition-all">
+                    <i class="fa-solid fa-users-gear text-emerald-500 w-5"></i> Access Matrix Search
+                </button>
+                <button onclick="switchAdminPanelSection('secDirectoryPanel', this)" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white text-left transition-all">
+                    <i class="fa-solid fa-folder-tree text-amber-500 w-5"></i> Title Fetch Manager
+                </button>
+                <button onclick="switchAdminPanelSection('secSysSettings', this)" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white text-left transition-all">
+                    <i class="fa-solid fa-sliders text-purple-500 w-5"></i> Global App Parameters
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="bg-slate-900/60 p-3 rounded-xl flex items-center gap-3 border border-slate-800">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                <span class="text-xs font-mono font-bold text-slate-400">Node Sync Established</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+        
+        <header class="h-20 bg-[#060b19]/60 border-b border-slate-800 px-8 flex items-center justify-between backdrop-blur-md">
+            <div>
+                <h2 id="txtCurrentNavRouteTitle" class="text-lg font-bold text-white">Dashboard Analytics Overview</h2>
+                <p class="text-xs text-slate-500">Real-time cluster statistics pipeline view</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <i class="fa-solid fa-rotate text-slate-400 hover:text-white cursor-pointer transition-all" onclick="refreshAdminDashboardClusterData()"></i>
+                <div class="h-8 w-px bg-slate-800"></div>
+                <span class="text-sm font-bold font-mono bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 text-brand-red">Admin Session Managed</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+
+            <section id="secOverview" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="glass-card rounded-2xl p-6 flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Node Network Users</p>
+                            <h3 id="statUsers" class="text-3xl font-black text-white mt-2">0</h3>
+                        </div>
+                        <i class="fa-solid fa-users text-4xl text-brand-blue/20"></i>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex justify-between items-center relative overflow-hidden border-l-2 border-l-brand-red">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">KYC Operations Pending</p>
+                            <h3 id="statPendingKyc" class="text-3xl font-black text-brand-red mt-2">0</h3>
+                        </div>
+                        <i class="fa-solid fa-user-clock text-4xl text-brand-red/10 animate-pulse"></i>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Verified Asset Matrix Profiles</p>
+                            <h3 id="statVerifiedUsers" class="text-3xl font-black text-emerald-400 mt-2">0</h3>
+                        </div>
+                        <i class="fa-solid fa-shield-cat text-4xl text-emerald-500/10"></i>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Liquidity Circulation</p>
+                            <h3 id="statSystemVolume" class="text-2xl font-black text-white mt-2">PKR 0.00</h3>
+                        </div>
+                        <i class="fa-solid fa-vault text-4xl text-amber-500/10"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-widest"><i class="fa-solid fa-list-check text-brand-blue mr-2"></i> Global Network Core Transactions Ledger</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-slate-400 text-xs font-mono">
+                                    <th class="pb-3 font-semibold">Transaction ID</th>
+                                    <th class="pb-3 font-semibold">Sender Identity Node</th>
+                                    <th class="pb-3 font-semibold">Receiver Destination Node</th>
+                                    <th class="pb-3 font-semibold">Asset Volume Transfer Amount</th>
+                                    <th class="pb-3 font-semibold">Core Network Settlement Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblAdminMasterTxLogs" class="text-xs font-mono divide-y divide-slate-900">
+                                <tr><td colspan="5" class="py-4 text-center text-slate-500">Awaiting stream packets data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="secKycCenter" class="space-y-6 hidden">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Identity Proof Verification Requests Pipeline</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-slate-400 text-xs font-mono">
+                                    <th class="pb-3">User Legal Name</th>
+                                    <th class="pb-3">Assigned Target System ID</th>
+                                    <th class="pb-3">Contact Verification Node</th>
+                                    <th class="pb-3 text-right">Verification Action Interface Trigger</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblKycPendingPipeline" class="text-xs divide-y divide-slate-900">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="secUserMatrix" class="space-y-6 hidden">
+                <div class="glass-card rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Advanced Core User Node Matrix Inspector Engine</h3>
+                    <div class="flex gap-4">
+                        <input type="text" id="txtSearchUserQuery" placeholder="Query input target: Type Mobile Number or Unique Account Identifier String" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3.5 focus:outline-none focus:border-brand-blue text-sm text-white">
+                        <button onclick="executeAdvancedUserSearchQuery()" class="px-6 rounded-xl bg-brand-blue text-white font-bold text-sm tracking-wide transition-all hover:bg-blue-700"><i class="fa-solid fa-magnifying-glass mr-2"></i> Scan Directory Matrix</button>
+                    </div>
+                </div>
+
+                <div id="deckUserInspectionModule" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-6 space-y-4 col-span-1">
+                        <div class="text-center pb-4 border-b border-slate-800">
+                            <div class="w-20 h-20 bg-slate-700 rounded-full mx-auto mb-3 border-2 border-brand-blue overflow-hidden"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150" class="w-full h-full object-cover"></div>
+                            <h4 id="inspectName" class="font-bold text-white text-lg">---</h4>
+                            <p id="inspectUid" class="text-xs font-mono text-brand-blue mt-0.5">---</p>
+                        </div>
+                        <div class="space-y-2 text-xs font-mono">
+                            <div class="flex justify-between"><span class="text-slate-500">Operational Profile Status:</span><span id="inspectStatus" class="font-bold">Active</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Asset Verification Level:</span><span id="inspectKyc" class="font-bold text-emerald-400">---</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Contact Line Mapping:</span><span id="inspectPhone" class="text-white">---</span></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 space-y-4 col-span-2">
+                        <h4 class="text-sm font-bold text-white uppercase tracking-wider border-b border-slate-800 pb-2"><i class="fa-solid fa-triangle-exclamation text-brand-red mr-2"></i> Security Override Core Terminal (Danger Zone Protocol)</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                            <div class="space-y-2">
+                                <label class="text-xs text-slate-400 font-bold">Manual Variable Balance Adjustment Engine</label>
+                                <input type="number" id="numAdjustAmt" placeholder="0.00 Volume Delta" class="w-full bg-slate-950 p-2.5 rounded-lg border border-slate-800 focus:outline-none focus:border-brand-red text-sm text-white font-mono">
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <button onclick="executeBalanceAdjustmentOverride('add')" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">Credit Liquidity (+)</button>
+                                <button onclick="executeBalanceAdjustmentOverride('sub')" class="flex-1 py-2.5 rounded-lg bg-brand-red hover:bg-red-700 text-white font-bold text-xs">Debit Liquidity (-)</button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 pt-2">
+                            <button id="btnActionFreezeToggle" onclick="toggleUserFreezeStatus()" class="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-all uppercase tracking-wider">Freeze Asset Pipeline</button>
+                            <button id="btnActionBanToggle" onclick="toggleUserBanStatus()" class="flex-1 py-3 rounded-xl bg-brand-red hover:bg-red-700 text-white font-bold text-xs transition-all uppercase tracking-wider">Terminate Access (Ban Node)</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="secDirectoryPanel" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-6 space-y-4 col-span-1">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Inject Directory Routing Node Pair</h3>
+                        <div class="space-y-3">
+                            <input type="text" id="dirInputId" placeholder="Account Identifier Matrix (e.g., ali@nexpay)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 focus:outline-none focus:border-brand-blue text-xs text-white">
+                            <input type="text" id="dirInputPhone" placeholder="Mobile Verification String Mapping" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 focus:outline-none focus:border-brand-blue text-xs text-white">
+                            <input type="text" id="dirInputName" placeholder="Real Legal Verification Identity Name" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 focus:outline-none focus:border-brand-blue text-xs text-white">
+                            <button onclick="commitDirectoryPairEntry()" class="w-full py-3 rounded-xl bg-brand-blue text-white font-bold text-xs uppercase tracking-widest hover:bg-blue-700">Write Matrix Node Pair</button>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 col-span-2 space-y-4">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Dynamic Bank Routing Directory Layout Logs</h3>
+                        <div class="overflow-y-auto max-h-72">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 text-[10px] font-mono">
+                                        <th class="pb-2">Matrix Unique ID Target</th>
+                                        <th class="pb-2">Phone Link</th>
+                                        <th class="pb-2">Resolved Title Legal Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tblBankDirectorySystemRecords" class="text-xs font-mono divide-y divide-slate-900">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="secSysSettings" class="space-y-6 hidden">
+                <div class="glass-card rounded-2xl p-6 max-w-xl space-y-4">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Central System Identity Configuration Variables</h3>
+                    <div class="space-y-2">
+                        <label class="text-xs text-slate-400 font-bold">Global App-Wide Username Suffix Identifier</label>
+                        <div class="flex gap-4">
+                            <input type="text" id="txtFieldGlobalConfigSuffix" placeholder="@nexpay" class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 focus:outline-none focus:border-brand-red text-sm font-mono text-white flex-1">
+                            <button onclick="commitGlobalSuffixChangeUpdate()" class="px-6 rounded-xl bg-brand-red text-white font-bold text-xs tracking-wider uppercase hover:bg-red-700">Propagate Suffix Matrix Change</button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 leading-relaxed">Updating this parameters structure triggers an immediate runtime dynamic sync overlay modifying all existing database user profiles parameters array structure instantly.</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div id="modalKycInspectorReviewSheet" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden">
+        <div class="bg-[#060b19] border border-slate-800 w-full max-w-4xl rounded-3xl p-6 space-y-6 shadow-2xl animate-[fadeIn_0.3s_ease]">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white">Biometric Evidence Validation Inspection Hub</h3>
+                <i onclick="closeKycVerificationInspectorModal()" class="fa-solid fa-circle-xmark text-slate-500 hover:text-white text-xl cursor-pointer"></i>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1 text-center">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Identity Doc Face Vector Scan</span>
+                    <div class="w-full h-44 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center text-slate-600"><i class="fa-solid fa-id-card text-4xl text-brand-red/30"></i></div>
+                </div>
+                <div class="space-y-1 text-center">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Identity Doc Rear Reverse Vector Scan</span>
+                    <div class="w-full h-44 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center text-slate-600"><i class="fa-solid fa-id-card text-4xl text-brand-blue/30"></i></div>
+                </div>
+                <div class="space-y-1 text-center">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Liveness Capture Frame Metric</span>
+                    <div class="w-full h-44 bg-slate-900 rounded-xl border border-brand-red rounded-full overflow-hidden mx-auto border flex items-center justify-center text-slate-600"><i class="fa-solid fa-user-astronaut text-4xl text-emerald-500/20"></i></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex-1 w-full space-y-1">
+                    <label class="text-xs text-slate-400 font-bold">Operational System Logs Review Output Statement Note</label>
+                    <input type="text" id="txtKycLogResponseNote" placeholder="e.g., Identification data validated against internal compliance standard parameters nodes." class="w-full bg-slate-900 border border-slate-800 p-3 rounded-lg focus:outline-none focus:border-brand-blue text-xs text-white">
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="commitKycDecisionProcessingPipeline('Successful')" class="flex-1 md:flex-initial px-6 py-3 bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all hover:bg-emerald-700">Approve Profile Matrix</button>
+                    <button onclick="commitKycDecisionProcessingPipeline('Rejected')" class="flex-1 md:flex-initial px-6 py-3 bg-brand-red text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all hover:bg-red-700">Reject Data Payload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // System core keys validation 
+    const SUPABASE_URL = "https://boydmzojlzcgphcxuwdd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJveWRtem9qbHpjZ3BoY3h1d2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzQ1NjAsImV4cCI6MjA5NzMxMDU2MH0.sxCQv-DaWAMh0nJxQmuMU5nXpO-SsUl7j1CDP999XwE";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let activeInspectedUserNodeObj = null;
+    let targetActiveKycApprovalRecordId = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshAdminDashboardClusterData();
+        // Hook Real-Time Transaction logs stream integration across dashboard views
+        _supabase.channel('admin_core_logs').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
+            fetchGlobalCoreTransactionLedgerRecords();
+        }).subscribe();
+    });
+
+    async function refreshAdminDashboardClusterData() {
+        await executeGlobalMetricsAggregationReport();
+        await fetchGlobalCoreTransactionLedgerRecords();
+        await fetchPendingKycSubmissionPipeline();
+        await fetchBankRoutingDirectoryRecords();
+        await syncSettingsSuffixDisplayField();
+    }
+
+    function switchAdminPanelSection(targetId, btnRef) {
+        ['secOverview', 'secKycCenter', 'secUserMatrix', 'secDirectoryPanel', 'secSysSettings'].forEach(s => {
+            document.getElementById(s).classList.add('hidden');
+        });
+        document.getElementById(targetId).classList.remove('hidden');
+        
+        // Handle Sidebar state styling visual switches
+        const sidebarButtons = btnRef.parentNode.querySelectorAll('button');
+        sidebarButtons.forEach(b => {
+            b.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white text-left transition-all";
+        });
+        btnRef.className = "sidebar-item-active w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold text-white text-left transition-all";
+        
+        document.getElementById('txtCurrentNavRouteTitle').innerText = btnRef.innerText.split('\n')[0];
+    }
+
+    async function executeGlobalMetricsAggregationReport() {
+        const { data: users, error } = await _supabase.from('users').select('balance, kyc_status');
+        if (users) {
+            document.getElementById('statUsers').innerText = users.length;
+            const pendingKyc = users.filter(u => u.kyc_status === 'Pending').length;
+            const successKyc = users.filter(u => u.kyc_status === 'Successful').length;
+            const totalVolume = users.reduce((acc, current) => acc + parseFloat(current.balance || 0), 0);
+
+            document.getElementById('statPendingKyc').innerText = pendingKyc;
+            if(pendingKyc > 0) {
+                document.getElementById('badgeKycCount').innerText = pendingKyc;
+                document.getElementById('badgeKycCount').classList.remove('hidden');
+            } else { document.getElementById('badgeKycCount').classList.add('hidden'); }
+
+            document.getElementById('statVerifiedUsers').innerText = successKyc;
+            document.getElementById('statSystemVolume').innerText = "PKR " + totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+    }
+
+    async function fetchGlobalCoreTransactionLedgerRecords() {
+        const { data, error } = await _supabase.from('transactions').select('*').order('timestamp', { ascending: false }).limit(20);
+        const container = document.getElementById('tblAdminMasterTxLogs');
+        if (data && data.length > 0) {
+            container.innerHTML = "";
+            data.forEach(tx => {
+                container.innerHTML += `
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="py-3 text-brand-red font-bold">${tx.tx_id}</td>
+                        <td class="py-3 text-white">${tx.sender_id}</td>
+                        <td class="py-3 text-brand-blue">${tx.receiver_id}</td>
+                        <td class="py-3 font-bold text-white">PKR ${Number(tx.amount).toFixed(2)}</td>
+                        <td class="py-3 text-slate-400">${new Date(tx.timestamp).toLocaleString()}</td>
+                    </tr>`;
+            });
+        } else { container.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No operations records present inside block ecosystem logs.</td></tr>`; }
+    }
+
+    async function fetchPendingKycSubmissionPipeline() {
+        const { data, error } = await _supabase.from('users').select('*').eq('kyc_status', 'Pending');
+        const container = document.getElementById('tblKycPendingPipeline');
+        if (data && data.length > 0) {
+            container.innerHTML = "";
+            data.forEach(u => {
+                container.innerHTML += `
+                    <tr class="hover:bg-slate-900/40 transition-colors border-b border-slate-900">
+                        <td class="py-3.5 font-bold text-white">${u.name}</td>
+                        <td class="py-3.5 font-mono text-brand-blue">${u.unique_id}</td>
+                        <td class="py-3.5 font-mono text-slate-400">${u.phone}</td>
+                        <td class="py-3.5 text-right"><button onclick="openKycVerificationInspectorModal('${u.id}')" class="px-3 py-1.5 rounded-lg bg-brand-blue hover:bg-blue-600 text-white font-bold text-[11px] uppercase tracking-wider">Inspect Proof Data</button></td>
+                    </tr>`;
+            });
+        } else { container.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500 font-mono">KYC processing data vector stack clear.</td></tr>`; }
+    }
+
+    function openKycVerificationInspectorModal(userId) {
+        targetActiveKycApprovalRecordId = userId;
+        document.getElementById('txtKycLogResponseNote').value = "";
+        document.getElementById('modalKycInspectorReviewSheet').classList.remove('hidden');
+    }
+
+    function closeKycVerificationInspectorModal() { document.getElementById('modalKycInspectorReviewSheet').classList.add('hidden'); }
+
+    async function commitKycDecisionProcessingPipeline(statusDecision) {
+        if(!targetActiveKycApprovalRecordId) return;
+        const msg = document.getElementById('txtKycLogResponseNote').value || "No detailed processing statement annotated.";
+        
+        await _supabase.from('users').update({ kyc_status: statusDecision }).eq('id', targetActiveKycApprovalRecordId);
+        // Log operation structural entry tracking manifest details here
+        await _supabase.from('manager_logs').insert([{ Action: `KYC_${statusDecision.toUpperCase()}`, Target: targetActiveKycApprovalRecordId, Note: msg, Timestamp: new Date().toISOString() }]);
+        
+        closeKycVerificationInspectorModal();
+        refreshAdminDashboardClusterData();
+    }
+
+    async function executeAdvancedUserSearchQuery() {
+        const query = document.getElementById('txtSearchUserQuery').value;
+        if(!query) return;
+
+        const { data, error } = await _supabase.from('users').select('*').or(`phone.eq.${query},unique_id.eq.${query}`).single();
+        if (data) {
+            activeInspectedUserNodeObj = data;
+            document.getElementById('inspectName').innerText = data.name;
+            document.getElementById('inspectUid').innerText = data.unique_id;
+            document.getElementById('inspectStatus').innerText = data.status;
+            document.getElementById('inspectStatus').className = data.status === 'Active' ? 'font-bold text-green-400' : 'font-bold text-red-500';
+            document.getElementById('inspectKyc').innerText = data.kyc_status;
+            document.getElementById('inspectPhone').innerText = data.phone;
+            
+            document.getElementById('btnActionFreezeToggle').innerText = data.status === 'Frozen' ? 'Unfreeze Asset Pipeline' : 'Freeze Asset Pipeline';
+            document.getElementById('btnActionBanToggle').innerText = data.status === 'Blocked' ? 'Revoke System Ban (Activate)' : 'Terminate Access (Ban Node)';
+
+            document.getElementById('deckUserInspectionModule').classList.remove('hidden');
+        } else { alert("Target directory entity could not be discovered inside existing clusters."); }
+    }
+
+    async function executeBalanceAdjustmentOverride(type) {
+        if(!activeInspectedUserNodeObj) return;
+        const deltaAmt = parseFloat(document.getElementById('numAdjustAmt').value);
+        if(!deltaAmt || deltaAmt <= 0) { alert("Invalid numerical balance modification payload."); return; }
+
+        let modifiedTotal = parseFloat(activeInspectedUserNodeObj.balance);
+        if(type === 'add') { modifiedTotal += deltaAmt; } else { modifiedTotal -= deltaAmt; }
+
+        await _supabase.from('users').update({ balance: modifiedTotal }).eq('id', activeInspectedUserNodeObj.id);
+        await _supabase.from('manager_logs').insert([{ Action: `BALANCE_OVERRIDE_${type.toUpperCase()}`, Target: activeInspectedUserNodeObj.unique_id, Note: `Volume alteration tracking parameter: ${deltaAmt}`, Timestamp: new Date().toISOString() }]);
+        
+        alert("Ledger liquidity manipulation pipeline verification completed.");
+        executeAdvancedUserSearchQuery();
+        executeGlobalMetricsAggregationReport();
+    }
+
+    async function toggleUserFreezeStatus() {
+        if(!activeInspectedUserNodeObj) return;
+        const targetNextStatusState = activeInspectedUserNodeObj.status === 'Frozen' ? 'Active' : 'Frozen';
+        await _supabase.from('users').update({ status: targetNextStatusState }).eq('id', activeInspectedUserNodeObj.id);
+        executeAdvancedUserSearchQuery();
+    }
+
+    async function toggleUserBanStatus() {
+        if(!activeInspectedUserNodeObj) return;
+        const targetNextStatusState = activeInspectedUserNodeObj.status === 'Blocked' ? 'Active' : 'Blocked';
+        await _supabase.from('users').update({ status: targetNextStatusState }).eq('id', activeInspectedUserNodeObj.id);
+        executeAdvancedUserSearchQuery();
+    }
+
+    async function fetchBankRoutingDirectoryRecords() {
+        const { data } = await _supabase.from('bank_directory').select('*').limit(30);
+        const container = document.getElementById('tblBankDirectorySystemRecords');
+        if (data) {
+            container.innerHTML = "";
+            data.forEach(row => {
+                container.innerHTML += `
+                    <tr class="border-b border-slate-900 hover:bg-slate-900/20">
+                        <td class="py-2.5 text-white">${row.unique_id}</td>
+                        <td class="py-2.5 text-slate-400">${row.phone}</td>
+                        <td class="py-2.5 text-emerald-400 font-bold">${row.real_name}</td>
+                    </tr>`;
+            });
+        }
+    }
+
+    async function commitDirectoryPairEntry() {
+        const unique_id = document.getElementById('dirInputId').value;
+        const phone = document.getElementById('dirInputPhone').value;
+        const real_name = document.getElementById('dirInputName').value;
+
+        if(!unique_id || !phone || !real_name) { alert("Form configuration data missing components parameters."); return; }
+        
+        await _supabase.from('bank_directory').insert([{ unique_id, phone, real_name }]);
+        
+        document.getElementById('dirInputId').value = "";
+        document.getElementById('dirInputPhone').value = "";
+        document.getElementById('dirInputName').value = "";
+        
+        fetchBankRoutingDirectoryRecords();
+    }
+
+    async function syncSettingsSuffixDisplayField() {
+        const { data } = await _supabase.from('app_config').select('*').single();
+        if(data) { document.getElementById('txtFieldGlobalConfigSuffix').value = data.suffix; }
+    }
+
+    async function commitGlobalSuffixChangeUpdate() {
+        const val = document.getElementById('txtFieldGlobalConfigSuffix').value;
+        if(!val) return;
+
+        await _supabase.from('app_config').update({ suffix: val }).eq('id', 1); // Mock mapping configuration assignment row tracking id
+        alert("Global platform asset network configuration updated successfully across cluster frameworks nodes.");
+    }
+</script>
+</body>
+</html>
